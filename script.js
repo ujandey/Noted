@@ -23,6 +23,11 @@ class ErrorBoundary extends React.Component {
 }
 
 function App() {
+  const colors = [
+    'bg-red-500', 'bg-yellow-500', 'bg-orange-500', 'bg-green-500', 'bg-blue-500', 'bg-purple-500',
+    'bg-pink-500', 'bg-indigo-500', 'bg-teal-500', 'bg-lime-500', 'bg-amber-500', 'bg-cyan-500',
+  ]; // Reduced to a nice selection, you can adjust this as you want
+
   const [notes, setNotes] = React.useState(() => {
     try {
       const saved = localStorage.getItem('notes');
@@ -77,7 +82,6 @@ function App() {
     ));
   };
 
-  // Handle editor clicks - prevent event bubbling
   const handleEditorClick = (e) => {
     e.stopPropagation();
   };
@@ -95,22 +99,24 @@ function App() {
       id: Date.now(),
       title: `note-${notes.length + 1}`,
       content: '',
-      color: colors[notes.length % colors.length]
+      color: 'bg-gray-700'  // Default neutral color for new notes
     };
     setNotes([...notes, newNote]);
     setEditingNoteId(newNote.id);
   };
 
-  const colors = [
-    'bg-red-500', 'bg-yellow-500', 'bg-orange-500', 'bg-green-500', 'bg-blue-500', 'bg-purple-500',
-    'bg-pink-500', 'bg-indigo-500', 'bg-teal-500', 'bg-lime-500', 'bg-amber-500', 'bg-cyan-500',
-    'bg-rose-500', 'bg-fuchsia-500', 'bg-emerald-500', 'bg-violet-500', 'bg-sky-500', 'bg-zinc-500',
-    'bg-stone-500', 'bg-neutral-500', 'bg-gray-500', 'bg-red-400', 'bg-orange-400', 'bg-yellow-400',
-    'bg-green-400', 'bg-blue-400', 'bg-purple-400', 'bg-pink-400', 'bg-indigo-400', 'bg-teal-400',
-    'bg-lime-400', 'bg-amber-400', 'bg-cyan-400', 'bg-rose-400', 'bg-fuchsia-400', 'bg-emerald-400',
-    'bg-violet-400', 'bg-sky-400', 'bg-zinc-400', 'bg-stone-400', 'bg-neutral-400', 'bg-gray-400'
-  ];
-  
+  // New: Change color randomly on button click
+  const changeNoteColor = (id) => {
+    const randomColor = colors[Math.floor(Math.random() * colors.length)];
+    setNotes(notes.map(note =>
+      note.id === id ? { ...note, color: randomColor } : note
+    ));
+  };
+
+  // Handle contentEditable input change
+  const handleContentChange = (id, e) => {
+    updateNoteContent(id, 'content', e.currentTarget.innerHTML);
+  };
 
   return (
     <div className="min-h-screen bg-gray-900 p-10 flex flex-col">
@@ -157,11 +163,16 @@ function App() {
             <div className="flex justify-between items-center mt-4">
               <div className="flex space-x-3">
                 {editingNoteId === note.id && (
-                  <>
-                    {/* Removed Bold and Italic buttons */}
-                  </>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      changeNoteColor(note.id);
+                    }}
+                    className="w-9 h-9 rounded-full bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 flex items-center justify-center hover:shadow-lg transition-shadow duration-200 ease-in-out"
+                  >
+                    🎨
+                  </button>
                 )}
-                {/* Removed B / span */}
               </div>
               <button
                 onClick={(e) => deleteNote(note.id, e)}
@@ -201,4 +212,4 @@ try {
 } catch (error) {
   console.error("Failed to render app:", error);
   document.body.innerHTML = `<div style="color: white; padding: 20px;">Error: ${error.message}</div>`;
-} 
+}
