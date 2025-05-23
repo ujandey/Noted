@@ -71,15 +71,6 @@ function App() {
     setTimeout(() => focusEditor(note.id), 10);
   };
 
-  // Handle content change and keep cursor at end
-  const handleContentChange = (id, event) => {
-    const content = event.currentTarget.innerHTML;
-    updateNoteContent(id, 'content', content);
-
-    // Re-position cursor
-    setTimeout(() => placeCursorAtEnd(event.currentTarget), 10);
-  };
-
   const updateNoteContent = (id, field, value) => {
     setNotes(notes.map(note =>
       note.id === id ? { ...note, [field]: value, isNew: false } : note
@@ -110,16 +101,25 @@ function App() {
     setEditingNoteId(newNote.id);
   };
 
-  const colors = ['bg-red-500', 'bg-yellow-500', 'bg-orange-500'];
+  const colors = [
+    'bg-red-500', 'bg-yellow-500', 'bg-orange-500', 'bg-green-500', 'bg-blue-500', 'bg-purple-500',
+    'bg-pink-500', 'bg-indigo-500', 'bg-teal-500', 'bg-lime-500', 'bg-amber-500', 'bg-cyan-500',
+    'bg-rose-500', 'bg-fuchsia-500', 'bg-emerald-500', 'bg-violet-500', 'bg-sky-500', 'bg-zinc-500',
+    'bg-stone-500', 'bg-neutral-500', 'bg-gray-500', 'bg-red-400', 'bg-orange-400', 'bg-yellow-400',
+    'bg-green-400', 'bg-blue-400', 'bg-purple-400', 'bg-pink-400', 'bg-indigo-400', 'bg-teal-400',
+    'bg-lime-400', 'bg-amber-400', 'bg-cyan-400', 'bg-rose-400', 'bg-fuchsia-400', 'bg-emerald-400',
+    'bg-violet-400', 'bg-sky-400', 'bg-zinc-400', 'bg-stone-400', 'bg-neutral-400', 'bg-gray-400'
+  ];
+  
 
   return (
     <div className="min-h-screen bg-gray-900 p-10 flex flex-col">
       {/* Notes Grid */}
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
         {notes.map(note => (
           <div
             key={note.id}
-            className={`${note.color} p-6 rounded-3xl cursor-pointer flex flex-col justify-between min-h-[200px]`}
+            className={`${note.color} p-6 rounded-3xl cursor-pointer flex flex-col justify-between min-h-[200px] shadow-2xl transform hover:scale-[1.03] transition-transform duration-200 ease-in-out backdrop-blur-sm bg-opacity-80 border-[1.5px] border-black/20`}
             onClick={() => handleNoteClick(note)}
           >
             <div className="flex-grow">
