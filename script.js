@@ -22,11 +22,60 @@ class ErrorBoundary extends React.Component {
   }
 }
 
+// Caret position helpers
+function getCaretCharacterOffsetWithin(element) {
+  let caretOffset = 0;
+  const sel = window.getSelection();
+  if (sel.rangeCount > 0) {
+    const range = sel.getRangeAt(0);
+    const preCaretRange = range.cloneRange();
+    preCaretRange.selectNodeContents(element);
+    preCaretRange.setEnd(range.endContainer, range.endOffset);
+    caretOffset = preCaretRange.toString().length;
+  }
+  return caretOffset;
+}
+
+function setCaretPosition(element, offset) {
+  const range = document.createRange();
+  const sel = window.getSelection();
+
+  let currentNode = null;
+  let currentOffset = 0;
+
+  function traverseNodes(node) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      const nextOffset = currentOffset + node.length;
+      if (offset <= nextOffset) {
+        currentNode = node;
+        return true;
+      }
+      currentOffset = nextOffset;
+    } else {
+      for (let i = 0; i < node.childNodes.length; i++) {
+        if (traverseNodes(node.childNodes[i])) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  traverseNodes(element);
+
+  if (currentNode) {
+    range.setStart(currentNode, offset - currentOffset);
+    range.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
+}
+
 function App() {
   const colors = [
     'bg-red-500', 'bg-yellow-500', 'bg-orange-500', 'bg-green-500', 'bg-blue-500', 'bg-purple-500',
     'bg-pink-500', 'bg-indigo-500', 'bg-teal-500', 'bg-lime-500', 'bg-amber-500', 'bg-cyan-500',
-  ]; // Reduced to a nice selection, you can adjust this as you want
+  ];
 
   const [notes, setNotes] = React.useState(() => {
     try {
@@ -47,22 +96,17 @@ function App() {
     }
   }, [notes]);
 
-  // Function to place cursor at the end of a contentEditable element
   const placeCursorAtEnd = (element) => {
     if (!element) return;
-    
     element.focus();
-
     const range = document.createRange();
     range.selectNodeContents(element);
-    range.collapse(false); // Collapse to end
-    
+    range.collapse(false);
     const selection = window.getSelection();
     selection.removeAllRanges();
     selection.addRange(range);
   };
 
-  // Focus the editor and place cursor at end
   const focusEditor = (noteId) => {
     setTimeout(() => {
       const editor = document.querySelector(`div[data-note-id="${noteId}"]`);
@@ -70,7 +114,6 @@ function App() {
     }, 10);
   };
 
-  // Handle note clicks - set editing mode and focus
   const handleNoteClick = (note) => {
     setEditingNoteId(note.id);
     setTimeout(() => focusEditor(note.id), 10);
@@ -99,13 +142,12 @@ function App() {
       id: Date.now(),
       title: `note-${notes.length + 1}`,
       content: '',
-      color: 'bg-gray-700'  // Default neutral color for new notes
+      color: 'bg-gray-700',
     };
     setNotes([...notes, newNote]);
     setEditingNoteId(newNote.id);
   };
 
-  // New: Change color randomly on button click
   const changeNoteColor = (id) => {
     const randomColor = colors[Math.floor(Math.random() * colors.length)];
     setNotes(notes.map(note =>
@@ -113,14 +155,25 @@ function App() {
     ));
   };
 
-  // Handle contentEditable input change
+  // Updated to save and restore caret position
   const handleContentChange = (id, e) => {
-    updateNoteContent(id, 'content', e.currentTarget.innerHTML);
+    const editor = e.currentTarget;
+    const caretPos = getCaretCharacterOffsetWithin(editor);
+    const newContent = editor.innerHTML;
+
+    updateNoteContent(id, 'content', newContent);
+
+    // Restore cursor after DOM update
+    setTimeout(() => {
+      const updatedEditor = document.querySelector(`div[data-note-id="${id}"]`);
+      if (updatedEditor) {
+        setCaretPosition(updatedEditor, caretPos);
+      }
+    }, 0);
   };
 
   return (
     <div className="min-h-screen bg-gray-900 p-10 flex flex-col">
-      {/* Notes Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
         {notes.map(note => (
           <div
@@ -185,7 +238,6 @@ function App() {
         ))}
       </div>
 
-      {/* New Note Button */}
       <div className="flex justify-center mt-8">
         <button
           onClick={handleNewNoteClick}
@@ -199,7 +251,7 @@ function App() {
   );
 }
 
-// Wrap rendering in a try-catch to catch startup errors
+// Render inside try-catch
 try {
   const rootElement = document.getElementById('root');
   const root = ReactDOM.createRoot(rootElement);
